@@ -1,0 +1,45 @@
+name: CI - Build, SonarCloud, Docker
+
+on:
+  push:
+    branches:
+      - feat/*
+      - main
+      - tasks
+  pull_request:
+    branches:
+      - feat/*
+      - main
+      - tasks
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21.0.9'
+          distribution: 'oracle'
+          cache: 'gradle'
+
+      - name: Build project
+        run: ./gradlew clean build
+
+      - name: SonarCloud Analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: ./gradlew sonar -Dsonar.login=$SONAR_TOKEN
+
+      - name: Build Docker Image
+        run: docker build -t authservice:ci .
