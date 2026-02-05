@@ -1,5 +1,6 @@
 package com.innowise.authservice.config;
 
+import com.innowise.authservice.exception.ExpiredTokenException;
 import com.innowise.authservice.exception.InvalidTokenException;
 import com.innowise.authservice.service.JwtService;
 import com.innowise.authservice.service.CustomUserDetailService;
@@ -32,6 +33,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   ) throws ServletException, IOException {
 
     final String authHeader = request.getHeader("Authorization");
+
     if (authHeader == null || !authHeader.startsWith("Bearer ")) {
       filterChain.doFilter(request, response);
       return;
@@ -43,7 +45,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
       var claims = jwtService.extractAllClaims(jwt);
 
       if (!"ACCESS".equals(claims.get("type", String.class))) {
-        filterChain.doFilter(request, response);
+        response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        response.getWriter().write("Invalid token type");
         return;
       }
 
@@ -67,10 +70,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(authToken);
       }
 
-    } catch (InvalidTokenException ex) {
-      log.error("Invalid token provided", ex);
-    throw new InvalidTokenException();
-
+    } catch (ExpiredTokenException e) {
+      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+      response.getWriter().write("Token expired");
+      return;
+    } catch (InvalidTokenException e) {
+      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+      response.getWriter().write("Invalid token");
+      return;
     }
 
     filterChain.doFilter(request, response);

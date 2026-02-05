@@ -52,7 +52,7 @@ public class AuthController {
 
   @PostMapping("/validate")
   public ResponseEntity<ValidateTokenResponse> validate(
-      @RequestHeader("Authorization") String authHeader
+      @RequestHeader(value = "Authorization", required = false) String authHeader
   ) {
     return ResponseEntity.ok(
         authenticationService.validateAuthHeader(authHeader)

@@ -1,5 +1,6 @@
 package com.innowise.authservice.advice;
 
+import com.innowise.authservice.exception.ExpiredTokenException;
 import com.innowise.authservice.exception.InvalidCredentialsException;
 import com.innowise.authservice.exception.InvalidTokenException;
 import com.innowise.authservice.exception.MissingAuthorizationHeaderException;
@@ -68,6 +69,13 @@ public class GlobalExceptionHandler {
   public ResponseEntity<String> handleMissingAuthorizationHeader(
       MissingAuthorizationHeaderException ex
   ) {
+    return ResponseEntity
+        .status(HttpStatus.UNAUTHORIZED)
+        .body(ex.getMessage());
+  }
+
+  @ExceptionHandler(ExpiredTokenException.class)
+  public ResponseEntity<String> handleExpiredToken(ExpiredTokenException ex) {
     return ResponseEntity
         .status(HttpStatus.UNAUTHORIZED)
         .body(ex.getMessage());
